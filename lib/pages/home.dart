@@ -1,80 +1,144 @@
 import 'package:flutter/material.dart';
-import 'package:todo_task/widgets/dialog.dart';
+import 'package:provider/provider.dart';
+import 'package:todo_task/models/task_model.dart';
+import 'package:todo_task/provaders/darkMode.dart';
+import 'package:todo_task/provaders/provader.dart';
+import 'package:todo_task/widgets/add_dialog.dart';
+import 'package:todo_task/widgets/drower.dart';
 import 'package:todo_task/widgets/task_card.dart';
 
-class homepage extends StatefulWidget {
-  const homepage({super.key,});
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({
+    super.key,
+  });
 
   @override
-  State<homepage> createState() => _homepageState();
- 
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _homepageState extends State<homepage> {
-  final _controller =TextEditingController();
-  List task=[
+class _HomeScreenState extends State<HomeScreen> {
+  TextEditingController taskTitleController = TextEditingController();
+  TextEditingController taskSubtitleController = TextEditingController();
 
-    ["Go To The Gym",false],
-   ["Go To The Home",false],
+  @override
+  void initState() {
+    super.initState();
+  }
 
-  ];
-  void ChakBoxstate(bool value,int index){
-    setState(() {
-      task [index][1]=!task[index][1];
-    });
-  }
-  void savetext(){
-    setState(() {
-      task.add([_controller.text,false]);
-      _controller.clear();
-    });
-    Navigator.of(context).pop;
-  }
-  void delettask(int index){
-    setState(() {
-      task.removeAt(index);
-    }
-      );
-  }
-  void showdilog (){
-    showDialog(
-      context:context,
-      builder: (context) {
-        return Mydialog(Controller: _controller, onsave:savetext, oncancel:() => Navigator.of(context).pop,);
-      });
-  }
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.deepPurple[100],
-      appBar: AppBar(
-        title: Center(child: Text('TO DO TASK')),
-        backgroundColor: Colors.deepPurple,
-      ),
-      floatingActionButton: FloatingActionButton(onPressed: showdilog,
-      child: Icon(Icons.add),
-
-      ),
-      body:ListView.builder(
-        itemCount: task.length,
-        itemBuilder: (context, index) {
-          return TaskCard(
-      taskName:   task[index][0],
-       isCompleted: task[index][1],
-      onChanged: (value) => ChakBoxstate(value!, index), 
-      delete: (context)=>delettask(index), 
-          );
-        },
-        
-        )
-      );
-      
-      
-      
-  
-      
-    
-
-    
+    return Consumer<darkmodeprovider>(builder: (context, darkModeConsumer, _) {
+      return Consumer<TasksProvider>(builder: (context, tasksConsumer, _) {
+        return Scaffold(
+            drawer: Drawer(
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      DrawerTile(
+                          text: darkModeConsumer.isdark
+                              ? "Light Mode"
+                              : "Dark Mode",
+                          onTab: () {
+                            Provider.of<darkmodeprovider>(context,
+                                    listen: false)
+                                .switchmoder();
+                          },
+                          icon: darkModeConsumer.isdark
+                              ? Icons.light_mode
+                              : Icons.dark_mode),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            floatingActionButton: FloatingActionButton(
+                child: const Icon(Icons.add),
+                onPressed: () {
+                  showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AddTaskDialog(
+                            titleController: taskTitleController,
+                            subTitleController: taskSubtitleController,
+                            onTap: () {
+                              Provider.of<TasksProvider>(context, listen: false)
+                                  .addTask(Taskmodel(
+                                      title: taskTitleController.text,
+     subtitle:
+                                          taskSubtitleController.text.isEmpty
+                                              ? null
+                                              : taskSubtitleController.text,                                     
+                                       ));
+                              taskTitleController.clear();
+                              taskSubtitleController.clear();
+                              Navigator.pop(context);
+                            });
+                      });
+                }),
+            appBar: AppBar(
+              title: const Text("TODO"),
+            ),
+            body: DefaultTabController(
+              length: 2,
+              child: Column(
+                children: [
+                  const TabBar(
+                      isScrollable: false,
+                      unselectedLabelColor: Colors.grey,
+                      indicatorColor: Colors.blue,
+                      tabs: [
+                        Tab(
+                          text: "Waiting",
+                        ),
+                        Tab(
+                          text: "Completed",
+                        )
+                      ]),
+                  Expanded(
+                    child: TabBarView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          ListView.builder(
+                            padding: const EdgeInsets.all(24),
+                            itemCount: tasksConsumer.tasks.length,
+                            itemBuilder: (context, index) {
+                              return tasksConsumer.tasks[index].isCompleted
+                                  ? const SizedBox()
+                                  : TaskCard(
+                                      taskModel: tasksConsumer.tasks[index],
+                                      onTap: () {
+                                        Provider.of<TasksProvider>(context,
+                                                listen: false)
+                                            .switchValue(
+                                                tasksConsumer.tasks[index]);
+                                      }, onTapForCheck: () {  },);
+                            },
+                          ),
+                          ListView.builder(
+                            padding: const EdgeInsets.all(24),
+                            itemCount: tasksConsumer.tasks.length,
+                            itemBuilder: (context, index) {
+                              return !tasksConsumer.tasks[index].isCompleted
+                                  ? const SizedBox()
+                                  : TaskCard(
+                                      taskModel: tasksConsumer.tasks[index],
+                                      onTap: () {
+                                        Provider.of<TasksProvider>(context,
+                                                listen: false)
+                                            .switchValue(
+                                                tasksConsumer.tasks[index]);
+                                      }, onTapForCheck: () {  },);
+                            },
+                          ),
+                        ]),
+                  )
+                ],
+              ),
+            ));
+      });
+    });
   }
 }
