@@ -20,14 +20,16 @@ class DrawerTile extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: () {
+             
               onTab();
+             
             },
             child: Container(
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: darkModeConsumer.isdark
                       ? Colors.white24
-                      : Colors.blue.withOpacity(0.1)),
+                      : Colors.purple.withOpacity(0.1)),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
